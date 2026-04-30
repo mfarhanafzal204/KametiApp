@@ -122,25 +122,67 @@ export default function CreateKametiDialog({ open, onOpenChange, onCreated }: Pr
 
   // ── Step 1 validation ─────────────────────────────────────────────────────
   function validateStep1(): boolean {
-    if (!step1.name.trim()) { toast.error("Kameti name is required"); return false; }
-    if (!monthlyAmt || monthlyAmt <= 0) { toast.error("Enter a valid monthly amount"); return false; }
-    if (!totalMonthsNum || totalMonthsNum < 1 || totalMonthsNum > 36) {
-      toast.error("Total months must be between 1 and 36");
+    if (!step1.name.trim()) {
+      toast.error("Kameti name is required", {
+        description: "Give your kameti a unique name so you can identify it easily.",
+        icon: "📝",
+      });
       return false;
     }
-    if (!step1.startDate) { toast.error("Start date is required"); return false; }
+    if (!monthlyAmt || monthlyAmt <= 0) {
+      toast.error("Enter a valid monthly amount", {
+        description: "Monthly installment must be greater than PKR 0.",
+        icon: "💰",
+      });
+      return false;
+    }
+    if (!totalMonthsNum || totalMonthsNum < 1 || totalMonthsNum > 36) {
+      toast.error("Total months must be between 1 and 36", {
+        description: "A kameti can run for 1 to 36 months.",
+        icon: "📅",
+      });
+      return false;
+    }
+    if (!step1.startDate) {
+      toast.error("Start date is required", {
+        description: "Pick the date when this kameti begins.",
+        icon: "📅",
+      });
+      return false;
+    }
     return true;
   }
 
   // ── Step 2 validation ─────────────────────────────────────────────────────
   function validateStep2(): boolean {
     for (const m of members) {
-      if (!m.name.trim()) { toast.error("All member names are required"); return false; }
-      if (!m.phone.trim()) { toast.error("All member phone numbers are required"); return false; }
-      if (m.phone.trim().length < 10) { toast.error(`Phone number for "${m.name}" looks too short`); return false; }
+      if (!m.name.trim()) {
+        toast.error("Member name is required", {
+          description: "Every member must have a full name.",
+          icon: "👤",
+        });
+        return false;
+      }
+      if (!m.phone.trim()) {
+        toast.error(`Phone number missing for "${m.name}"`, {
+          description: "A phone number is needed to send WhatsApp reminders.",
+          icon: "📱",
+        });
+        return false;
+      }
+      if (m.phone.trim().length < 10) {
+        toast.error(`Phone number for "${m.name}" looks too short`, {
+          description: "Enter a valid Pakistani number e.g. 03xx-xxxxxxx",
+          icon: "📱",
+        });
+        return false;
+      }
     }
     if (duplicateMonths.length > 0) {
-      toast.error(`Payout month ${duplicateMonths[0]} is assigned to more than one member`);
+      toast.error(`Month ${duplicateMonths[0]} is assigned to two members`, {
+        description: "Each payout month can only be assigned to one member.",
+        icon: "⚠️",
+      });
       return false;
     }
     return true;
@@ -149,7 +191,10 @@ export default function CreateKametiDialog({ open, onOpenChange, onCreated }: Pr
   // ── Member helpers ────────────────────────────────────────────────────────
   function addMember() {
     if (members.length >= totalMonthsNum) {
-      toast.error(`You can only add up to ${totalMonthsNum} members`);
+      toast.error(`Maximum ${totalMonthsNum} members allowed`, {
+        description: "Number of members cannot exceed total months.",
+        icon: "👥",
+      });
       return;
     }
     // Auto-pick the first unassigned month
@@ -165,7 +210,13 @@ export default function CreateKametiDialog({ open, onOpenChange, onCreated }: Pr
   }
 
   function removeMember(id: string) {
-    if (members.length === 1) { toast.error("At least one member is required"); return; }
+    if (members.length === 1) {
+      toast.error("At least one member is required", {
+        description: "A kameti needs at least one member.",
+        icon: "👤",
+      });
+      return;
+    }
     setMembers((prev) => prev.filter((m) => m.id !== id));
   }
 

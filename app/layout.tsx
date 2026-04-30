@@ -3,6 +3,7 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { LanguageProvider } from "@/lib/language-context";
 import InstallBanner from "@/components/app/InstallBanner";
+import { ThemeProvider } from "next-themes";
 
 export const metadata: Metadata = {
   title: {
@@ -50,11 +51,27 @@ export default function RootLayout({
         <meta name="mobile-web-app-capable" content="yes" />
       </head>
       <body>
-        <LanguageProvider>
-          {children}
-          <Toaster position="top-right" richColors closeButton />
-          <InstallBanner />
-        </LanguageProvider>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange={false}>
+          <LanguageProvider>
+            {children}
+            <Toaster
+              position="top-center"
+              richColors
+              closeButton
+              toastOptions={{
+                style: {
+                  borderRadius: "14px",
+                  fontSize: "14px",
+                  fontWeight: "500",
+                  boxShadow: "0 8px 30px rgba(0,0,0,0.12)",
+                  border: "1px solid rgba(0,0,0,0.06)",
+                },
+                duration: 4000,
+              }}
+            />
+            <InstallBanner />
+          </LanguageProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

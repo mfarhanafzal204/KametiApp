@@ -35,6 +35,7 @@ import {
 } from "lucide-react";
 import { formatCurrency, getInitials } from "@/lib/utils";
 import CreateKametiDialog from "@/components/app/CreateKametiDialog";
+import ThemeToggle from "@/components/app/ThemeToggle";
 
 interface Stats {
   activeCount: number;
@@ -164,29 +165,34 @@ export default function DashboardClient() {
             <button
               onClick={toggleLang}
               aria-label="Toggle language"
-              className="flex items-center gap-0 rounded-full border border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors overflow-hidden text-xs font-semibold h-8 select-none"
+              className="relative flex items-center rounded-full border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 p-0.5 h-9 shadow-inner select-none overflow-hidden"
+              style={{ minWidth: 88 }}
             >
+              {/* Sliding pill indicator */}
               <span
-                className={`px-2.5 py-1 transition-colors ${
-                  lang === "en"
-                    ? "bg-green-600 text-white"
-                    : "text-gray-500 hover:text-gray-700"
+                className="absolute top-0.5 bottom-0.5 w-[calc(50%-2px)] rounded-full bg-white dark:bg-gray-600 shadow-sm border border-gray-200 dark:border-gray-500 transition-all duration-300 ease-in-out"
+                style={{ left: lang === "en" ? "2px" : "calc(50%)" }}
+                aria-hidden="true"
+              />
+              <span
+                className={`relative z-10 flex-1 text-center text-xs font-bold transition-colors duration-200 py-1 ${
+                  lang === "en" ? "text-green-700 dark:text-green-400" : "text-gray-400"
                 }`}
               >
                 EN
               </span>
-              <span className="text-gray-300 text-xs">|</span>
               <span
-                className={`px-2.5 py-1 transition-colors font-normal ${
-                  lang === "ur"
-                    ? "bg-green-600 text-white"
-                    : "text-gray-500 hover:text-gray-700"
+                className={`relative z-10 flex-1 text-center text-xs font-bold transition-colors duration-200 py-1 ${
+                  lang === "ur" ? "text-green-700 dark:text-green-400" : "text-gray-400"
                 }`}
                 style={{ fontFamily: "sans-serif" }}
               >
                 اردو
               </span>
             </button>
+
+            {/* ── Theme toggle ── */}
+            <ThemeToggle />
 
             {/* Create button — visible on desktop */}
             <Button
@@ -463,10 +469,11 @@ export default function DashboardClient() {
       {/* ── FAB — mobile only ── */}
       <button
         onClick={() => setCreateOpen(true)}
-        className="sm:hidden fixed bottom-6 right-6 w-14 h-14 rounded-full gradient-primary text-white shadow-lg hover:shadow-xl active:scale-95 transition-all flex items-center justify-center z-50"
+        className="sm:hidden fixed bottom-6 right-5 w-14 h-14 rounded-2xl gradient-primary text-white shadow-xl shadow-green-300/50 hover:shadow-2xl hover:shadow-green-300/60 active:scale-95 transition-all flex items-center justify-center z-50 border border-green-500/30"
         aria-label={t("createKameti")}
+        style={{ background: "linear-gradient(135deg, #16a34a 0%, #15803d 100%)" }}
       >
-        <Plus className="w-6 h-6" />
+        <Plus className="w-7 h-7 drop-shadow-sm" />
       </button>
 
       {/* ── Create Kameti Dialog ── */}

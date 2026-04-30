@@ -251,9 +251,10 @@ export default function KametiTabs({ kameti, members, initialPayments, currentMo
                       </div>
                       {!isPaid && (
                         <a href={whatsappUrl} target="_blank" rel="noopener noreferrer"
-                          className="flex-shrink-0 w-8 h-8 rounded-full bg-green-500 hover:bg-green-600 flex items-center justify-center transition-colors"
+                          className="flex-shrink-0 flex items-center gap-1.5 bg-[#25D366] hover:bg-[#20bd5a] active:scale-95 text-white text-xs font-bold px-2.5 py-1.5 rounded-xl shadow-md shadow-green-200 transition-all min-h-[36px]"
                           title="Send WhatsApp reminder" aria-label="Send WhatsApp reminder">
                           <WhatsAppIcon />
+                          <span className="hidden sm:inline">Remind</span>
                         </a>
                       )}
                       <div className="flex items-center gap-2 flex-shrink-0">

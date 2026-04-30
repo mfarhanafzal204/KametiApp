@@ -22,8 +22,20 @@ import {
   Globe,
   CheckCircle2,
   Coins,
+  Trash2,
+  AlertTriangle,
+  Moon,
 } from "lucide-react";
 import { getInitials } from "@/lib/utils";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import ThemeToggle from "@/components/app/ThemeToggle";
 
 // App version — bump this manually on releases
 const APP_VERSION = "1.0.0";
@@ -63,6 +75,8 @@ export default function SettingsClient({
   const [saving, setSaving]   = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   // ── Validation ────────────────────────────────────────────────────────────
   function validate(): boolean {
@@ -128,6 +142,36 @@ export default function SettingsClient({
     }
   }
 
+  // ── Delete account ────────────────────────────────────────────────────────
+  async function handleDeleteAccount() {
+    setDeleting(true);
+    try {
+      // 1. Delete all kametis (CASCADE removes members + payments)
+      const { error: kametiError } = await supabase
+        .from("kametis")
+        .delete()
+        .eq("admin_id", userId);
+      if (kametiError) throw new Error(kametiError.message);
+
+      // 2. Delete profile row
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .delete()
+        .eq("id", userId);
+      if (profileError) throw new Error(profileError.message);
+
+      // 3. Sign out (auth user deletion requires service role — sign out is sufficient for client)
+      await supabase.auth.signOut();
+
+      toast.success("Account deleted. Goodbye!");
+      router.push("/");
+      router.refresh();
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to delete account. Please try again.");
+      setDeleting(false);
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
 
@@ -142,12 +186,13 @@ export default function SettingsClient({
             <span className="text-sm font-medium">Dashboard</span>
           </Link>
           <Separator orientation="vertical" className="h-6" />
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-1">
             <div className="w-6 h-6 rounded-md bg-green-600 flex items-center justify-center">
               <Coins className="w-3.5 h-3.5 text-white" />
             </div>
-            <h1 className="font-bold text-gray-900 text-base">Settings</h1>
+            <h1 className="font-bold text-gray-900 dark:text-gray-100 text-base">Settings</h1>
           </div>
+          <ThemeToggle />
         </div>
       </header>
 
@@ -307,6 +352,25 @@ export default function SettingsClient({
           </CardContent>
         </Card>
 
+        {/* ── Appearance ── */}
+        <Card className="border border-gray-100 shadow-sm">
+          <div className="px-5 py-4 border-b border-gray-100">
+            <h2 className="font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+              <Moon className="w-4 h-4 text-green-600" />
+              Appearance
+            </h2>
+          </div>
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Dark Mode</p>
+                <p className="text-xs text-gray-500 mt-0.5">Switch between light and dark theme</p>
+              </div>
+              <ThemeToggle />
+            </div>
+          </CardContent>
+        </Card>
+
         {/* ── Account ── */}
         <Card className="border border-gray-100 shadow-sm">
           <div className="px-5 py-4 border-b border-gray-100">
@@ -340,6 +404,32 @@ export default function SettingsClient({
           </CardContent>
         </Card>
 
+        {/* ── Danger Zone ── */}
+        <Card className="border border-red-100 shadow-sm">
+          <div className="px-5 py-4 border-b border-red-100">
+            <h2 className="font-semibold text-red-600 flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4" />
+              Danger Zone
+            </h2>
+          </div>
+          <CardContent className="p-5 space-y-3">
+            <div>
+              <p className="text-sm font-medium text-gray-900">Delete Account</p>
+              <p className="text-xs text-gray-500 mt-0.5">
+                Permanently delete your account and all your kametis, members, and payment records. This cannot be undone.
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              onClick={() => setDeleteOpen(true)}
+              className="w-full min-h-[48px] border-red-300 text-red-600 hover:bg-red-50 hover:border-red-400 font-semibold"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Delete My Account
+            </Button>
+          </CardContent>
+        </Card>
+
         {/* ── App info ── */}
         <div className="text-center py-4 space-y-1">
           <div className="flex items-center justify-center gap-1.5">
@@ -353,6 +443,51 @@ export default function SettingsClient({
         </div>
 
       </main>
+
+      {/* ── Delete Account Confirmation Dialog ── */}
+      <Dialog open={deleteOpen} onOpenChange={(v) => { if (!deleting) setDeleteOpen(v); }}>
+        <DialogContent className="max-w-sm mx-4 rounded-2xl">
+          <DialogHeader>
+            <div className="flex items-center gap-3 mb-1">
+              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                <AlertTriangle className="w-5 h-5 text-red-600" />
+              </div>
+              <DialogTitle className="text-left text-lg">Delete Account?</DialogTitle>
+            </div>
+            <DialogDescription className="text-left text-sm text-gray-600 leading-relaxed">
+              This will permanently delete:
+              <ul className="mt-2 space-y-0.5 list-disc list-inside text-gray-500">
+                <li>Your profile and account</li>
+                <li>All your kametis</li>
+                <li>All members and payment records</li>
+              </ul>
+              <br />
+              <span className="text-red-600 font-semibold">This action is irreversible.</span>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 mt-2">
+            <Button
+              variant="outline"
+              onClick={() => setDeleteOpen(false)}
+              disabled={deleting}
+              className="flex-1 min-h-[44px]"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleDeleteAccount}
+              disabled={deleting}
+              className="flex-1 min-h-[44px] bg-red-600 hover:bg-red-700 text-white font-semibold"
+            >
+              {deleting ? (
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Deleting…</>
+              ) : (
+                <><Trash2 className="w-4 h-4 mr-2" />Delete Everything</>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

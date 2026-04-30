@@ -58,6 +58,8 @@
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
+    /* Smooth theme transition */
+    transition: background-color 0.3s ease, color 0.2s ease;
   }
 
   /* Ensure all interactive elements meet 44px touch target */

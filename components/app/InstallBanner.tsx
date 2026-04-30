@@ -2,98 +2,183 @@
 
 import { useEffect, useState } from "react";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
-import { X, Download } from "lucide-react";
+import { X, Download, Share, Plus } from "lucide-react";
+
+// Progress bar that drains over 8 seconds
+function CountdownBar({ duration }: { duration: number }) {
+  return (
+    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-white/10 overflow-hidden">
+      <div
+        className="h-full bg-white/40 rounded-full"
+        style={{
+          animation: `drain ${duration}ms linear forwards`,
+        }}
+      />
+      <style>{`
+        @keyframes drain {
+          from { width: 100%; }
+          to   { width: 0%; }
+        }
+      `}</style>
+    </div>
+  );
+}
 
 export default function InstallBanner() {
-  const { canInstall, promptInstall, dismiss } = usePWAInstall();
-  // Show after 3s, auto-dismiss after 8s
-  const [visible, setVisible] = useState(false);
-  const [fading, setFading] = useState(false);
+  const { canInstall, isIOS, promptInstall, dismiss } = usePWAInstall();
 
-  function handleDismiss() {
-    setFading(true);
+  const [phase, setPhase] = useState<"hidden" | "entering" | "visible" | "leaving">("hidden");
+
+  const SHOW_DELAY  = 3000;   // wait 3s before appearing
+  const VISIBLE_FOR = 9000;   // stay visible 9s
+  const ANIM_MS     = 500;    // slide animation duration
+
+  function leave() {
+    setPhase("leaving");
     setTimeout(() => {
-      setVisible(false);
+      setPhase("hidden");
       dismiss();
-    }, 400); // match transition duration
+    }, ANIM_MS);
   }
 
   useEffect(() => {
-    if (!canInstall) { setVisible(false); return; }
+    if (!canInstall) { setPhase("hidden"); return; }
 
-    // Show after 3s
-    const showTimer = setTimeout(() => setVisible(true), 3000);
+    const showTimer = setTimeout(() => {
+      setPhase("entering");
+      // After entering animation, mark as visible
+      setTimeout(() => setPhase("visible"), ANIM_MS);
+    }, SHOW_DELAY);
 
-    // Start fade-out after 3s + 8s = 11s total
-    const fadeTimer = setTimeout(() => setFading(true), 11000);
-
-    // Remove from DOM after fade completes
+    // Auto-dismiss after show delay + animation + visible time
     const hideTimer = setTimeout(() => {
-      setVisible(false);
-      dismiss();
-    }, 11400);
+      leave();
+    }, SHOW_DELAY + ANIM_MS + VISIBLE_FOR);
 
     return () => {
       clearTimeout(showTimer);
-      clearTimeout(fadeTimer);
       clearTimeout(hideTimer);
     };
-  }, [canInstall, dismiss]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canInstall]);
 
-  if (!visible) return null;
+  if (phase === "hidden") return null;
+
+  const isSliding = phase === "entering" || phase === "leaving";
 
   return (
-    <div
-      role="banner"
-      aria-label="Install KametiPro app"
-      className="fixed bottom-0 left-0 right-0 z-50 px-4 pb-safe transition-opacity duration-400"
-      style={{
-        paddingBottom: "env(safe-area-inset-bottom, 0px)",
-        opacity: fading ? 0 : 1,
-        transition: "opacity 0.4s ease",
-      }}
-    >
-      {/* Backdrop blur card */}
-      <div className="mx-auto max-w-lg mb-3 rounded-2xl border border-green-200 bg-white/95 backdrop-blur-sm shadow-2xl overflow-hidden">
-        {/* Green top accent */}
-        <div className="h-1 w-full bg-gradient-to-r from-green-500 via-emerald-400 to-green-500" />
+    <>
+      {/* ── Slide-up animation styles ── */}
+      <style>{`
+        @keyframes slideUp {
+          from { transform: translateY(110%); opacity: 0; }
+          to   { transform: translateY(0);    opacity: 1; }
+        }
+        @keyframes slideDown {
+          from { transform: translateY(0);    opacity: 1; }
+          to   { transform: translateY(110%); opacity: 0; }
+        }
+      `}</style>
 
-        <div className="px-4 py-3.5 flex items-center gap-3">
-          {/* App icon */}
-          <div className="w-11 h-11 rounded-xl bg-green-600 flex items-center justify-center flex-shrink-0 shadow-md">
-            <span className="text-white font-bold text-lg leading-none">₨</span>
+      <div
+        role="banner"
+        aria-label="Install KametiPro app"
+        className="fixed bottom-0 left-0 right-0 z-[100] px-3 sm:px-4"
+        style={{ paddingBottom: "max(env(safe-area-inset-bottom, 0px), 12px)" }}
+      >
+        <div
+          className="mx-auto max-w-md"
+          style={{
+            animation: isSliding
+              ? phase === "entering"
+                ? `slideUp ${ANIM_MS}ms cubic-bezier(0.34,1.56,0.64,1) forwards`
+                : `slideDown ${ANIM_MS}ms ease-in forwards`
+              : undefined,
+          }}
+        >
+          {/* ── Card ── */}
+          <div className="relative rounded-2xl overflow-hidden shadow-2xl shadow-black/25">
+
+            {/* Gradient background */}
+            <div
+              className="absolute inset-0"
+              style={{
+                background: "linear-gradient(135deg, #15803d 0%, #16a34a 50%, #059669 100%)",
+              }}
+            />
+
+            {/* Subtle pattern overlay */}
+            <div
+              className="absolute inset-0 opacity-10"
+              style={{
+                backgroundImage: "radial-gradient(circle at 20% 50%, white 1px, transparent 1px), radial-gradient(circle at 80% 20%, white 1px, transparent 1px)",
+                backgroundSize: "30px 30px",
+              }}
+            />
+
+            {/* Content */}
+            <div className="relative px-4 py-4 flex items-center gap-3">
+
+              {/* App icon */}
+              <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center flex-shrink-0 shadow-lg">
+                <span className="text-white font-black text-xl leading-none">₨</span>
+              </div>
+
+              {/* Text */}
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-white text-sm leading-tight">
+                  Install KametiPro
+                </p>
+                {isIOS ? (
+                  <p className="text-green-100 text-xs mt-0.5 leading-tight">
+                    Tap <Share className="w-3 h-3 inline mx-0.5 -mt-0.5" /> then{" "}
+                    <span className="font-semibold">&quot;Add to Home Screen&quot;</span>
+                  </p>
+                ) : (
+                  <p className="text-green-100 text-xs mt-0.5 leading-tight">
+                    Works offline · Faster · No app store needed
+                  </p>
+                )}
+              </div>
+
+              {/* CTA button — Android only (iOS needs manual steps) */}
+              {!isIOS && (
+                <button
+                  onClick={async () => {
+                    await promptInstall();
+                    setPhase("hidden");
+                  }}
+                  className="flex-shrink-0 flex items-center gap-1.5 bg-white hover:bg-green-50 active:scale-95 text-green-700 text-xs font-bold px-3.5 py-2.5 rounded-xl transition-all shadow-md min-h-[40px]"
+                  aria-label="Install app"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  Install
+                </button>
+              )}
+
+              {/* iOS: show a visual hint icon */}
+              {isIOS && (
+                <div className="flex-shrink-0 flex items-center gap-1 bg-white/20 border border-white/30 text-white text-xs font-semibold px-3 py-2 rounded-xl min-h-[40px]">
+                  <Plus className="w-3.5 h-3.5" />
+                  Add
+                </div>
+              )}
+
+              {/* Dismiss */}
+              <button
+                onClick={leave}
+                className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-white/60 hover:text-white hover:bg-white/20 transition-colors"
+                aria-label="Dismiss"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            {/* Countdown drain bar */}
+            {phase === "visible" && <CountdownBar duration={VISIBLE_FOR} />}
           </div>
-
-          {/* Text */}
-          <div className="flex-1 min-w-0">
-            <p className="font-bold text-gray-900 text-sm leading-tight">
-              Install KametiPro on your phone
-            </p>
-            <p className="text-xs text-gray-500 mt-0.5 leading-tight">
-              Use it like a native app — works offline too!
-            </p>
-          </div>
-
-          {/* Install button */}
-          <button
-            onClick={promptInstall}
-            className="flex-shrink-0 flex items-center gap-1.5 bg-green-600 hover:bg-green-700 active:scale-95 text-white text-xs font-bold px-3.5 py-2 rounded-xl transition-all min-h-[36px]"
-            aria-label="Install app"
-          >
-            <Download className="w-3.5 h-3.5" />
-            Install
-          </button>
-
-          {/* Dismiss */}
-          <button
-            onClick={handleDismiss}
-            className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
-            aria-label="Dismiss install banner"
-          >
-            <X className="w-4 h-4" />
-          </button>
         </div>
       </div>
-    </div>
+    </>
   );
 }

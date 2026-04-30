@@ -345,7 +345,7 @@ export default function LandingPage() {
           Pakistan ka sabse asaan kameti management app.
         </p>
         <p className="text-gray-600 text-xs">
-          © {new Date().getFullYear()} KametiPro · Free Forever · Made with ❤️ for Pakistan
+          © {new Date().getFullYear()} KametiPro
         </p>
         <p className="text-gray-600 text-xs mt-1">
           Made by{" "}
