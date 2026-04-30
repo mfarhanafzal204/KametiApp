@@ -6,14 +6,39 @@ import { X, Download } from "lucide-react";
 
 export default function InstallBanner() {
   const { canInstall, promptInstall, dismiss } = usePWAInstall();
-  // Delay mount by 3s so it doesn't flash on first load
+  // Show after 3s, auto-dismiss after 8s
   const [visible, setVisible] = useState(false);
+  const [fading, setFading] = useState(false);
+
+  function handleDismiss() {
+    setFading(true);
+    setTimeout(() => {
+      setVisible(false);
+      dismiss();
+    }, 400); // match transition duration
+  }
 
   useEffect(() => {
     if (!canInstall) { setVisible(false); return; }
-    const timer = setTimeout(() => setVisible(true), 3000);
-    return () => clearTimeout(timer);
-  }, [canInstall]);
+
+    // Show after 3s
+    const showTimer = setTimeout(() => setVisible(true), 3000);
+
+    // Start fade-out after 3s + 8s = 11s total
+    const fadeTimer = setTimeout(() => setFading(true), 11000);
+
+    // Remove from DOM after fade completes
+    const hideTimer = setTimeout(() => {
+      setVisible(false);
+      dismiss();
+    }, 11400);
+
+    return () => {
+      clearTimeout(showTimer);
+      clearTimeout(fadeTimer);
+      clearTimeout(hideTimer);
+    };
+  }, [canInstall, dismiss]);
 
   if (!visible) return null;
 
@@ -21,8 +46,12 @@ export default function InstallBanner() {
     <div
       role="banner"
       aria-label="Install KametiPro app"
-      className="fixed bottom-0 left-0 right-0 z-50 px-4 pb-safe"
-      style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
+      className="fixed bottom-0 left-0 right-0 z-50 px-4 pb-safe transition-opacity duration-400"
+      style={{
+        paddingBottom: "env(safe-area-inset-bottom, 0px)",
+        opacity: fading ? 0 : 1,
+        transition: "opacity 0.4s ease",
+      }}
     >
       {/* Backdrop blur card */}
       <div className="mx-auto max-w-lg mb-3 rounded-2xl border border-green-200 bg-white/95 backdrop-blur-sm shadow-2xl overflow-hidden">
@@ -57,7 +86,7 @@ export default function InstallBanner() {
 
           {/* Dismiss */}
           <button
-            onClick={dismiss}
+            onClick={handleDismiss}
             className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
             aria-label="Dismiss install banner"
           >

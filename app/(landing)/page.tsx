@@ -259,13 +259,13 @@ export default function LandingPage() {
             Join thousands of Pakistanis managing their kametis digitally — from Karachi to Peshawar.
           </p>
 
-          <div className="grid grid-cols-3 gap-4 sm:gap-8 max-w-2xl mx-auto">
+          <div className="grid grid-cols-3 gap-2 sm:gap-8 max-w-2xl mx-auto">
             {stats.map((s) => (
-              <div key={s.label} className="bg-gray-50 rounded-2xl p-5 border border-gray-100">
-                <p className="text-2xl sm:text-3xl font-extrabold text-green-600 leading-none mb-1">
+              <div key={s.label} className="bg-gray-50 rounded-2xl p-3 sm:p-5 border border-gray-100 min-w-0">
+                <p className="text-lg sm:text-3xl font-extrabold text-green-600 leading-none mb-1 break-words">
                   {s.value}
                 </p>
-                <p className="text-xs sm:text-sm text-gray-500 font-medium leading-tight">
+                <p className="text-[10px] sm:text-sm text-gray-500 font-medium leading-tight">
                   {s.label}
                 </p>
               </div>
@@ -346,6 +346,17 @@ export default function LandingPage() {
         </p>
         <p className="text-gray-600 text-xs">
           © {new Date().getFullYear()} KametiPro · Free Forever · Made with ❤️ for Pakistan
+        </p>
+        <p className="text-gray-600 text-xs mt-1">
+          Made by{" "}
+          <a
+            href="https://www.arcturetechnologies.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-gray-400 hover:text-green-400 transition-colors underline underline-offset-2"
+          >
+            Arcture Technologies
+          </a>
         </p>
       </footer>
 
