@@ -57,7 +57,7 @@ export async function generateReportPDF(data: ReportData): Promise<void> {
 
   // ── WATERMARK (drawn first, behind everything) ────────────────────────────
   doc.saveGraphicsState();
-  doc.setGState(new (doc as any).GState({ opacity: 0.04 }));
+  doc.setGState(new (doc as unknown as { GState: new (opts: { opacity: number }) => unknown }).GState({ opacity: 0.04 }));
   doc.setFont("helvetica", "bold");
   doc.setFontSize(52);
   doc.setTextColor(...GRAY_900);
