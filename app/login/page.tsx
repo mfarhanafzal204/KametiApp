@@ -1,10 +1,9 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useState, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
-import { createClient } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,7 +27,15 @@ function LoginForm() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
-  const supabase = createClient();
+  // Lazy-init supabase client — only created on first interaction, never during SSR
+  const supabaseRef = useRef<ReturnType<typeof import("@/lib/supabase").createClient> | null>(null);
+  async function getSupabase() {
+    if (!supabaseRef.current) {
+      const { createClient } = await import("@/lib/supabase");
+      supabaseRef.current = createClient();
+    }
+    return supabaseRef.current;
+  }
 
   function switchMode(newMode: "login" | "signup") {
     setMode(newMode);
@@ -39,6 +46,7 @@ function LoginForm() {
   async function handleGoogleLogin() {
     setGoogleLoading(true);
     try {
+      const supabase = await getSupabase();
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
@@ -61,6 +69,7 @@ function LoginForm() {
 
     setLoading(true);
     try {
+      const supabase = await getSupabase();
       if (mode === "signup") {
         const { error } = await supabase.auth.signUp({
           email,
@@ -155,11 +164,9 @@ function LoginForm() {
             {mode === "signup" && (
               <div className="space-y-1.5">
                 <Label htmlFor="fullName" className="text-sm font-medium">Full Name</Label>
-                <Input
-                  id="fullName" type="text" placeholder="Muhammad Ali"
+                <Input id="fullName" type="text" placeholder="Muhammad Ali"
                   value={fullName} onChange={(e) => setFullName(e.target.value)}
-                  className="min-h-[48px]" autoComplete="name"
-                />
+                  className="min-h-[48px]" autoComplete="name" />
               </div>
             )}
 
@@ -167,11 +174,9 @@ function LoginForm() {
               <Label htmlFor="email" className="text-sm font-medium">Email Address</Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <Input
-                  id="email" type="email" placeholder="you@example.com"
+                <Input id="email" type="email" placeholder="you@example.com"
                   value={email} onChange={(e) => setEmail(e.target.value)}
-                  className="pl-10 min-h-[48px]" autoComplete="email" required
-                />
+                  className="pl-10 min-h-[48px]" autoComplete="email" required />
               </div>
             </div>
 
@@ -179,12 +184,10 @@ function LoginForm() {
               <Label htmlFor="password" className="text-sm font-medium">Password</Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <Input
-                  id="password" type={showPassword ? "text" : "password"} placeholder="••••••••"
+                <Input id="password" type={showPassword ? "text" : "password"} placeholder="••••••••"
                   value={password} onChange={(e) => setPassword(e.target.value)}
                   className="pl-10 pr-10 min-h-[48px]"
-                  autoComplete={mode === "signup" ? "new-password" : "current-password"} required
-                />
+                  autoComplete={mode === "signup" ? "new-password" : "current-password"} required />
                 <button type="button" onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 min-h-0"
                   aria-label={showPassword ? "Hide password" : "Show password"}>
@@ -198,19 +201,14 @@ function LoginForm() {
                 <Label htmlFor="confirmPassword" className="text-sm font-medium">Confirm Password</Label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <Input
-                    id="confirmPassword"
+                  <Input id="confirmPassword"
                     type={showConfirmPassword ? "text" : "password"} placeholder="••••••••"
                     value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
                     className={`pl-10 pr-10 min-h-[48px] ${
-                      confirmPassword && confirmPassword !== password
-                        ? "border-red-400 focus-visible:ring-red-400"
-                        : confirmPassword && confirmPassword === password
-                        ? "border-green-400 focus-visible:ring-green-400"
-                        : ""
-                    }`}
-                    autoComplete="new-password" required
-                  />
+                      confirmPassword && confirmPassword !== password ? "border-red-400 focus-visible:ring-red-400"
+                      : confirmPassword && confirmPassword === password ? "border-green-400 focus-visible:ring-green-400"
+                      : ""}`}
+                    autoComplete="new-password" required />
                   <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 min-h-0"
                     aria-label={showConfirmPassword ? "Hide password" : "Show password"}>
@@ -223,14 +221,12 @@ function LoginForm() {
               </div>
             )}
 
-            <Button
-              type="submit"
+            <Button type="submit"
               className="w-full min-h-[48px] bg-green-600 hover:bg-green-700 text-white font-semibold"
-              disabled={loading || googleLoading}
-            >
-              {loading ? (
-                <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{mode === "login" ? "Signing in…" : "Creating account…"}</>
-              ) : mode === "login" ? "Sign In" : "Create Account"}
+              disabled={loading || googleLoading}>
+              {loading
+                ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{mode === "login" ? "Signing in…" : "Creating account…"}</>
+                : mode === "login" ? "Sign In" : "Create Account"}
             </Button>
           </form>
 
@@ -246,17 +242,15 @@ function LoginForm() {
   );
 }
 
-// ── Page export — Suspense required for useSearchParams at build time ─────────
+// ── Page export ───────────────────────────────────────────────────────────────
 export default function LoginPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-amber-50 flex items-center justify-center p-4">
-      <Suspense
-        fallback={
-          <div className="flex items-center justify-center py-20">
-            <Loader2 className="w-8 h-8 animate-spin text-green-600" />
-          </div>
-        }
-      >
+      <Suspense fallback={
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="w-8 h-8 animate-spin text-green-600" />
+        </div>
+      }>
         <LoginForm />
       </Suspense>
     </div>
